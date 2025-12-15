@@ -296,12 +296,18 @@ jobs:
           | Dependency Vulns | ${{ steps.pipaudit.outputs.vulns || 'N/A' }} |
 
           ## Tools Run
-          - pytest: ${{ inputs.run_pytest }}
-          - Ruff: ${{ inputs.run_ruff }}
-          - Black: ${{ inputs.run_black }}
-          - isort: ${{ inputs.run_isort }}
-          - Bandit: ${{ inputs.run_bandit }}
-          - pip-audit: ${{ inputs.run_pip_audit }}
-          - mypy: ${{ inputs.run_mypy }}
-          - mutmut: ${{ inputs.run_mutmut }}
+          | Tool | Status |
+          |------|--------|
+          | pytest | ${{ inputs.run_pytest && '✅ Ran' || '⏭️ Skipped' }} |
+          | Ruff | ${{ inputs.run_ruff && '✅ Ran' || '⏭️ Skipped' }} |
+          | Black | ${{ inputs.run_black && '✅ Ran' || '⏭️ Skipped' }} |
+          | isort | ${{ inputs.run_isort && '✅ Ran' || '⏭️ Skipped' }} |
+          | Bandit | ${{ inputs.run_bandit && '✅ Ran' || '⏭️ Skipped' }} |
+          | pip-audit | ${{ inputs.run_pip_audit && '✅ Ran' || '⏭️ Skipped' }} |
+          | mypy | ${{ inputs.run_mypy && '✅ Ran' || '⏭️ Skipped' }} |
+          | mutmut | ${{ inputs.run_mutmut && '✅ Ran' || '⏭️ Skipped' }} |
+          | CodeQL | ${{ inputs.run_codeql && '✅ Ran' || '⏭️ Skipped' }} |
+          | Semgrep | ${{ inputs.run_semgrep && '✅ Ran' || '⏭️ Skipped' }} |
+          | Trivy | ${{ inputs.run_trivy && '✅ Ran' || '⏭️ Skipped' }} |
+          | Docker | ${{ inputs.run_docker && '✅ Ran' || '⏭️ Skipped' }} |
           EOF

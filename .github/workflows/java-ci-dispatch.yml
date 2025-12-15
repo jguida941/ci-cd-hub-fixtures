@@ -282,10 +282,16 @@ jobs:
           | Mutation Score | ${{ steps.pitest.outputs.score || 'N/A' }}% |
 
           ## Tools Run
-          - JaCoCo: ${{ inputs.run_jacoco }}
-          - Checkstyle: ${{ inputs.run_checkstyle }}
-          - SpotBugs: ${{ inputs.run_spotbugs }}
-          - PMD: ${{ inputs.run_pmd }}
-          - OWASP: ${{ inputs.run_owasp }}
-          - PITest: ${{ inputs.run_pitest }}
+          | Tool | Status |
+          |------|--------|
+          | JaCoCo | ${{ inputs.run_jacoco && '✅ Ran' || '⏭️ Skipped' }} |
+          | Checkstyle | ${{ inputs.run_checkstyle && '✅ Ran' || '⏭️ Skipped' }} |
+          | SpotBugs | ${{ inputs.run_spotbugs && '✅ Ran' || '⏭️ Skipped' }} |
+          | PMD | ${{ inputs.run_pmd && '✅ Ran' || '⏭️ Skipped' }} |
+          | OWASP | ${{ inputs.run_owasp && '✅ Ran' || '⏭️ Skipped' }} |
+          | PITest | ${{ inputs.run_pitest && '✅ Ran' || '⏭️ Skipped' }} |
+          | CodeQL | ${{ inputs.run_codeql && '✅ Ran' || '⏭️ Skipped' }} |
+          | Semgrep | ${{ inputs.run_semgrep && '✅ Ran' || '⏭️ Skipped' }} |
+          | Trivy | ${{ inputs.run_trivy && '✅ Ran' || '⏭️ Skipped' }} |
+          | Docker | ${{ inputs.run_docker && '✅ Ran' || '⏭️ Skipped' }} |
           EOF
