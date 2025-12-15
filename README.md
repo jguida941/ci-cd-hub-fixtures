@@ -4,10 +4,10 @@ Purpose-built projects to exercise the hub pipelines end-to-end (templates, prof
 
 ## Projects
 
-- `java-passing` — Maven project with passing tests, clean lint.
-- `java-failing` — Maven project with one failing test.
-- `python-passing` — Small package with passing pytest, formatted code.
-- `python-failing` — Same but with one failing test.
+- `java-passing` - Maven project with passing tests, clean lint.
+- `java-failing` - Maven project with one failing test.
+- `python-passing` - Small package with passing pytest, formatted code.
+- `python-failing` - Same but with one failing test.
 
 ## How to use with hub
 
