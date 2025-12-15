@@ -33,8 +33,9 @@ Pillow==8.2.0
 # requests 2.25.0 - CVE-2023-32681 (proxy auth leak)
 requests==2.25.0
 
-# PyYAML 5.3 - CVE-2020-14343 (arbitrary code execution)
-PyYAML==5.3
+# PyYAML 5.3.1 - CVE-2020-14343 (arbitrary code execution)
+# Using 5.3.1 instead of 5.3 due to bandit compatibility (requires >=5.3.1)
+PyYAML==5.3.1
 
 # Note: The code in this fixture has intentional security issues
 # that Bandit and Semgrep will detect (hardcoded passwords, eval, etc.)
