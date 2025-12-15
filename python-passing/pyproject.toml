@@ -1,0 +1,11 @@
+[project]
+name = "python-passing"
+version = "0.1.0"
+description = "Passing fixture for CI/CD hub"
+requires-python = ">=3.10"
+dependencies = [
+  "pytest>=7.4",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
