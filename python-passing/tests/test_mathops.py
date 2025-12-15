@@ -1,7 +1,7 @@
 """Comprehensive tests for mathops module."""
 
 import pytest
-from hypothesis import given, strategies as st
+from hypothesis import HealthCheck, given, settings, strategies as st
 
 from python_passing import mathops
 
@@ -281,42 +281,52 @@ class TestGcdLcm:
 
 
 # Hypothesis property-based tests
+# Note: Using settings to suppress health check for mutation testing compatibility
 class TestPropertyBased:
     """Property-based tests using Hypothesis."""
 
+    @settings(suppress_health_check=[HealthCheck.differing_executors])
     @given(st.integers(), st.integers())
     def test_add_commutative(self, a, b):
         assert mathops.add(a, b) == mathops.add(b, a)
 
+    @settings(suppress_health_check=[HealthCheck.differing_executors])
     @given(st.integers(), st.integers())
     def test_multiply_commutative(self, a, b):
         assert mathops.multiply(a, b) == mathops.multiply(b, a)
 
+    @settings(suppress_health_check=[HealthCheck.differing_executors])
     @given(st.integers())
     def test_add_zero_identity(self, a):
         assert mathops.add(a, 0) == a
 
+    @settings(suppress_health_check=[HealthCheck.differing_executors])
     @given(st.integers())
     def test_multiply_one_identity(self, a):
         assert mathops.multiply(a, 1) == a
 
+    @settings(suppress_health_check=[HealthCheck.differing_executors])
     @given(st.integers())
     def test_absolute_value_non_negative(self, n):
         assert mathops.absolute_value(n) >= 0
 
+    @settings(suppress_health_check=[HealthCheck.differing_executors])
     @given(st.integers())
     def test_is_even_or_odd(self, n):
         assert mathops.is_even(n) != mathops.is_odd(n)
 
+    @settings(suppress_health_check=[HealthCheck.differing_executors])
     @given(st.integers(min_value=-100, max_value=100))
     def test_max_ge_min(self, a):
         b = a + 1
         assert mathops.max_of_two(a, b) >= mathops.min_of_two(a, b)
 
+    @settings(suppress_health_check=[HealthCheck.differing_executors])
     @given(st.integers(min_value=0, max_value=15))
     def test_factorial_non_negative(self, n):
         assert mathops.factorial(n) >= 1
 
+    @settings(suppress_health_check=[HealthCheck.differing_executors])
     @given(st.integers(min_value=1, max_value=50), st.integers(min_value=1, max_value=50))
     def test_gcd_divides_both(self, a, b):
         g = mathops.gcd(a, b)

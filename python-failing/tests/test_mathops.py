@@ -1,7 +1,7 @@
 """Tests for mathops module - some will FAIL due to bugs in the code."""
 
 import pytest
-from hypothesis import given, strategies as st
+from hypothesis import HealthCheck, given, settings, strategies as st
 
 from python_failing import mathops
 
@@ -111,13 +111,16 @@ class TestCalculator:
 
 
 # Property-based tests using Hypothesis
+# Note: Using settings to suppress health check for mutation testing compatibility
 class TestPropertyBased:
     """Property-based tests."""
 
+    @settings(suppress_health_check=[HealthCheck.differing_executors])
     @given(st.integers(), st.integers())
     def test_add_commutative(self, a, b):
         assert mathops.add(a, b) == mathops.add(b, a)
 
+    @settings(suppress_health_check=[HealthCheck.differing_executors])
     @given(st.integers(), st.integers())
     def test_subtract_anticommutative(self, a, b):
         # This property test WILL FAIL due to the bug

@@ -1,0 +1,9 @@
+pyproject.toml
+python_passing/__init__.py
+python_passing/mathops.py
+python_passing.egg-info/PKG-INFO
+python_passing.egg-info/SOURCES.txt
+python_passing.egg-info/dependency_links.txt
+python_passing.egg-info/requires.txt
+python_passing.egg-info/top_level.txt
+tests/test_mathops.py
