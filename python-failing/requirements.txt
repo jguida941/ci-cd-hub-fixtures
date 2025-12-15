@@ -1,5 +1,5 @@
 # Python Failing Fixture Dependencies
-# Some packages here may have known vulnerabilities for testing pip-audit
+# Some packages here have KNOWN VULNERABILITIES for testing pip-audit/Trivy
 
 # Testing
 pytest>=7.4.0
@@ -20,6 +20,21 @@ pip-audit>=2.6.1
 
 # Mutation testing
 mutmut>=3.0.0
+
+# ============================================================
+# INTENTIONALLY VULNERABLE DEPENDENCIES FOR TESTING
+# ============================================================
+# urllib3 1.26.4 - CVE-2021-33503 (DoS via regex)
+urllib3==1.26.4
+
+# Pillow 8.2.0 - Multiple CVEs (buffer overflow, DoS)
+Pillow==8.2.0
+
+# requests 2.25.0 - CVE-2023-32681 (proxy auth leak)
+requests==2.25.0
+
+# PyYAML 5.3 - CVE-2020-14343 (arbitrary code execution)
+PyYAML==5.3
 
 # Note: The code in this fixture has intentional security issues
 # that Bandit and Semgrep will detect (hardcoded passwords, eval, etc.)

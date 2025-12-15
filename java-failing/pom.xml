@@ -26,6 +26,28 @@
             <version>${junit.version}</version>
             <scope>test</scope>
         </dependency>
+
+        <!-- INTENTIONALLY VULNERABLE DEPENDENCIES FOR TESTING -->
+        <!-- Log4j 2.14.1 - CVE-2021-44228 (Log4Shell) - CRITICAL -->
+        <dependency>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-core</artifactId>
+            <version>2.14.1</version>
+        </dependency>
+
+        <!-- Commons Collections 3.2.1 - CVE-2015-6420 - HIGH (Deserialization) -->
+        <dependency>
+            <groupId>commons-collections</groupId>
+            <artifactId>commons-collections</artifactId>
+            <version>3.2.1</version>
+        </dependency>
+
+        <!-- Spring Core 5.2.0 - Multiple CVEs -->
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-core</artifactId>
+            <version>5.2.0.RELEASE</version>
+        </dependency>
     </dependencies>
 
     <build>
