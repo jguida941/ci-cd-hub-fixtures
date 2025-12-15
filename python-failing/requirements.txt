@@ -27,9 +27,9 @@ mutmut>=3.0.0
 # urllib3 1.26.4 - CVE-2021-33503 (DoS via regex)
 urllib3==1.26.4
 
-# Pillow 9.5.0 - CVE-2023-44271 (DoS), CVE-2023-50447 (RCE)
-# Using 9.5.0 instead of 8.2.0 for Python 3.12 compatibility
-Pillow==9.5.0
+# Pillow 10.1.0 - CVE-2023-50447 (RCE via ImageMath.eval)
+# Has pre-built wheels for Python 3.12
+Pillow==10.1.0
 
 # requests 2.25.0 - CVE-2023-32681 (proxy auth leak)
 requests==2.25.0
