@@ -17,7 +17,8 @@ permissions:
   security-events: write
 
 jobs:
-  ci:
+  ci-passing:
+    name: "Java Passing"
     uses: jguida941/ci-cd-hub/.github/workflows/java-ci.yml@phase1b-workflow-schema
     with:
       java_version: '21'
@@ -26,12 +27,32 @@ jobs:
       run_checkstyle: true
       run_spotbugs: true
       run_owasp: true
-      run_pitest: false  # Skip for faster test
+      run_pitest: true
       run_pmd: true
-      run_semgrep: false
-      run_trivy: false
-      run_docker: false
-      run_codeql: false
+      run_semgrep: true
+      run_trivy: true
+      run_docker: true
+      run_codeql: true
       coverage_min: 70
       workdir: 'java-passing'
+    secrets: inherit
+
+  ci-failing:
+    name: "Java Failing"
+    uses: jguida941/ci-cd-hub/.github/workflows/java-ci.yml@phase1b-workflow-schema
+    with:
+      java_version: '21'
+      build_tool: 'maven'
+      run_jacoco: true
+      run_checkstyle: true
+      run_spotbugs: true
+      run_owasp: true
+      run_pitest: true
+      run_pmd: true
+      run_semgrep: true
+      run_trivy: true
+      run_docker: true
+      run_codeql: true
+      coverage_min: 70
+      workdir: 'java-failing'
     secrets: inherit
