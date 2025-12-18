@@ -45,7 +45,7 @@ jobs:
   ci-failing:
     # NOTE: Relaxed thresholds so we can see all findings in ci-report
     # This fixture is expected to have issues - we want to verify detection
-    # TODO: When ready for production, set appropriate thresholds
+    # All tools run but with high thresholds to accept failures
     name: "Python Failing"
     uses: jguida941/ci-cd-hub/.github/workflows/python-ci.yml@phase1b-workflow-schema
     with:
@@ -67,6 +67,9 @@ jobs:
       max_critical_vulns: 999
       max_high_vulns: 999
       max_semgrep_findings: 999
+      max_black_issues: 999
+      max_isort_issues: 999
+      max_ruff_errors: 999
       workdir: 'python-failing'
       artifact_prefix: 'python-failing-'
     secrets: inherit
