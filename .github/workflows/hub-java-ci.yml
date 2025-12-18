@@ -34,6 +34,7 @@ jobs:
       run_docker: true
       run_codeql: true
       coverage_min: 70
+      mutation_score_min: 0  # PITest config being fixed
       workdir: 'java-passing'
       artifact_prefix: 'java-passing-'
     secrets: inherit
@@ -63,6 +64,7 @@ jobs:
       max_critical_vulns: 999
       max_high_vulns: 999
       max_semgrep_findings: 999
+      max_pmd_violations: 999
       workdir: 'java-failing'
       artifact_prefix: 'java-failing-'
     secrets: inherit
