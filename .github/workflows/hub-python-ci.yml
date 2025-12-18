@@ -99,3 +99,237 @@ jobs:
       workdir: 'python-with-docker'
       artifact_prefix: 'python-docker-'
     secrets: inherit
+
+  # ============================================================================
+  # Report Validation - Passing Fixture
+  # ============================================================================
+  validate-passing:
+    name: "Validate Passing Report"
+    runs-on: ubuntu-latest
+    needs: ci-passing
+    if: always()
+    steps:
+      - name: Download Report
+        uses: actions/download-artifact@v4
+        with:
+          name: python-passing-ci-report
+          path: ./report
+
+      - name: Validate Report Structure
+        run: |
+          REPORT="./report/report.json"
+          ERRORS=0
+
+          if [ ! -f "$REPORT" ]; then
+            echo "::error::report.json not found"
+            exit 1
+          fi
+
+          echo "=== Report Contents ==="
+          cat "$REPORT"
+          echo ""
+          echo "=== Validation Checks ==="
+
+          # 1. Schema version must be exactly "2.0"
+          SCHEMA=$(jq -r '.schema_version // empty' "$REPORT")
+          if [ "$SCHEMA" != "2.0" ]; then
+            echo "::error::schema_version must be '2.0', got '$SCHEMA'"
+            ERRORS=$((ERRORS + 1))
+          else
+            echo "✓ schema_version: $SCHEMA"
+          fi
+
+          # 2. Test results
+          TESTS_PASSED=$(jq -r '.results.tests_passed // 0' "$REPORT")
+          TESTS_FAILED=$(jq -r '.results.tests_failed // 0' "$REPORT")
+          if [ "$TESTS_PASSED" -eq 0 ]; then
+            echo "::error::tests_passed is 0 - expected tests to run"
+            ERRORS=$((ERRORS + 1))
+          else
+            echo "✓ tests_passed: $TESTS_PASSED"
+          fi
+          if [ "$TESTS_FAILED" -gt 0 ]; then
+            echo "::error::tests_failed ($TESTS_FAILED) > 0 - passing fixture should have no test failures"
+            ERRORS=$((ERRORS + 1))
+          else
+            echo "✓ tests_failed: $TESTS_FAILED"
+          fi
+
+          # 3. Coverage >= 70%
+          COVERAGE=$(jq -r '.results.coverage // 0' "$REPORT")
+          if [ "$COVERAGE" -lt 70 ]; then
+            echo "::error::coverage ($COVERAGE%) below 70% threshold"
+            ERRORS=$((ERRORS + 1))
+          else
+            echo "✓ coverage: $COVERAGE%"
+          fi
+
+          # 4. ALL enabled tools must show tools_ran == true
+          # Tools enabled in ci-passing job:
+          echo ""
+          echo "--- tools_ran checks (enabled tools for ci-passing) ---"
+          for TOOL in pytest ruff bandit pip_audit mypy black isort mutmut semgrep trivy docker codeql; do
+            RAN=$(jq -r ".tools_ran.$TOOL // false" "$REPORT")
+            if [ "$RAN" != "true" ]; then
+              echo "::error::tools_ran.$TOOL is $RAN - expected true (tool was enabled)"
+              ERRORS=$((ERRORS + 1))
+            else
+              echo "✓ tools_ran.$TOOL: $RAN"
+            fi
+          done
+
+          # 5. tool_metrics must be populated for enabled tools
+          echo ""
+          echo "--- tool_metrics checks (passing fixture = 0 issues) ---"
+          RUFF_ERRORS=$(jq -r '.tool_metrics.ruff_errors // "null"' "$REPORT")
+          BANDIT_HIGH=$(jq -r '.tool_metrics.bandit_high // "null"' "$REPORT")
+          BANDIT_MEDIUM=$(jq -r '.tool_metrics.bandit_medium // "null"' "$REPORT")
+          BLACK_ISSUES=$(jq -r '.tool_metrics.black_issues // "null"' "$REPORT")
+          ISORT_ISSUES=$(jq -r '.tool_metrics.isort_issues // "null"' "$REPORT")
+          SEMGREP_FINDINGS=$(jq -r '.tool_metrics.semgrep_findings // "null"' "$REPORT")
+
+          # Check populated (not null)
+          for METRIC in ruff_errors bandit_high bandit_medium black_issues isort_issues semgrep_findings; do
+            VAL=$(jq -r ".tool_metrics.$METRIC // \"null\"" "$REPORT")
+            if [ "$VAL" = "null" ]; then
+              echo "::error::tool_metrics.$METRIC is null - should be populated"
+              ERRORS=$((ERRORS + 1))
+            fi
+          done
+
+          # For passing fixture: lint/security issues must be 0
+          if [ "$RUFF_ERRORS" != "null" ] && [ "$RUFF_ERRORS" -gt 0 ]; then
+            echo "::error::ruff_errors ($RUFF_ERRORS) > 0 - passing fixture should have no lint errors"
+            ERRORS=$((ERRORS + 1))
+          else
+            echo "✓ ruff_errors: $RUFF_ERRORS"
+          fi
+          if [ "$BLACK_ISSUES" != "null" ] && [ "$BLACK_ISSUES" -gt 0 ]; then
+            echo "::error::black_issues ($BLACK_ISSUES) > 0 - passing fixture should have no format issues"
+            ERRORS=$((ERRORS + 1))
+          else
+            echo "✓ black_issues: $BLACK_ISSUES"
+          fi
+          if [ "$ISORT_ISSUES" != "null" ] && [ "$ISORT_ISSUES" -gt 0 ]; then
+            echo "::error::isort_issues ($ISORT_ISSUES) > 0 - passing fixture should have no import issues"
+            ERRORS=$((ERRORS + 1))
+          else
+            echo "✓ isort_issues: $ISORT_ISSUES"
+          fi
+          if [ "$BANDIT_HIGH" != "null" ] && [ "$BANDIT_HIGH" -gt 0 ]; then
+            echo "::error::bandit_high ($BANDIT_HIGH) > 0 - passing fixture should have no high security issues"
+            ERRORS=$((ERRORS + 1))
+          else
+            echo "✓ bandit_high: $BANDIT_HIGH"
+          fi
+
+          echo ""
+          if [ "$ERRORS" -gt 0 ]; then
+            echo "::error::Validation failed with $ERRORS errors"
+            exit 1
+          fi
+          echo "=== Passing Fixture Validation Complete: All checks passed ==="
+
+  # ============================================================================
+  # Report Validation - Failing Fixture
+  # ============================================================================
+  validate-failing:
+    name: "Validate Failing Report"
+    runs-on: ubuntu-latest
+    needs: ci-failing
+    if: always()
+    steps:
+      - name: Download Report
+        uses: actions/download-artifact@v4
+        with:
+          name: python-failing-ci-report
+          path: ./report
+
+      - name: Validate Report Structure
+        run: |
+          REPORT="./report/report.json"
+          ERRORS=0
+
+          if [ ! -f "$REPORT" ]; then
+            echo "::error::report.json not found"
+            exit 1
+          fi
+
+          echo "=== Report Contents ==="
+          cat "$REPORT"
+          echo ""
+          echo "=== Validation Checks ==="
+
+          # 1. Schema version must be exactly "2.0"
+          SCHEMA=$(jq -r '.schema_version // empty' "$REPORT")
+          if [ "$SCHEMA" != "2.0" ]; then
+            echo "::error::schema_version must be '2.0', got '$SCHEMA'"
+            ERRORS=$((ERRORS + 1))
+          else
+            echo "✓ schema_version: $SCHEMA"
+          fi
+
+          # 2. ALL enabled tools must show tools_ran == true
+          # Tools enabled in ci-failing job:
+          echo ""
+          echo "--- tools_ran checks (enabled tools for ci-failing) ---"
+          for TOOL in pytest ruff bandit pip_audit mypy black isort mutmut semgrep trivy docker codeql; do
+            RAN=$(jq -r ".tools_ran.$TOOL // false" "$REPORT")
+            if [ "$RAN" != "true" ]; then
+              echo "::error::tools_ran.$TOOL is $RAN - expected true (tool was enabled)"
+              ERRORS=$((ERRORS + 1))
+            else
+              echo "✓ tools_ran.$TOOL: $RAN"
+            fi
+          done
+
+          # 3. tool_metrics must be populated (not null)
+          echo ""
+          echo "--- tool_metrics checks (must be populated) ---"
+          for METRIC in ruff_errors bandit_high bandit_medium black_issues isort_issues semgrep_findings; do
+            VAL=$(jq -r ".tool_metrics.$METRIC // \"null\"" "$REPORT")
+            if [ "$VAL" = "null" ]; then
+              echo "::error::tool_metrics.$METRIC is null - should be populated"
+              ERRORS=$((ERRORS + 1))
+            else
+              echo "✓ tool_metrics.$METRIC: $VAL"
+            fi
+          done
+
+          # 4. Failing fixture MUST detect issues - fail if no issues found
+          echo ""
+          echo "--- Issue detection checks (failing fixture must have issues) ---"
+          BLACK_ISSUES=$(jq -r '.tool_metrics.black_issues // 0' "$REPORT")
+          RUFF_ERRORS=$(jq -r '.tool_metrics.ruff_errors // 0' "$REPORT")
+          BANDIT_HIGH=$(jq -r '.tool_metrics.bandit_high // 0' "$REPORT")
+          BANDIT_MEDIUM=$(jq -r '.tool_metrics.bandit_medium // 0' "$REPORT")
+
+          # Black MUST detect formatting issues in failing fixture
+          if [ "$BLACK_ISSUES" -eq 0 ]; then
+            echo "::error::black_issues is 0 - failing fixture MUST have formatting issues"
+            ERRORS=$((ERRORS + 1))
+          else
+            echo "✓ black_issues: $BLACK_ISSUES (issues detected as expected)"
+          fi
+
+          # Ruff should detect issues
+          if [ "$RUFF_ERRORS" -eq 0 ]; then
+            echo "::warning::ruff_errors is 0 - failing fixture should have lint issues"
+          else
+            echo "✓ ruff_errors: $RUFF_ERRORS (issues detected as expected)"
+          fi
+
+          # Bandit should detect security issues if present
+          BANDIT_TOTAL=$((BANDIT_HIGH + BANDIT_MEDIUM))
+          if [ "$BANDIT_TOTAL" -gt 0 ]; then
+            echo "✓ bandit findings: high=$BANDIT_HIGH, medium=$BANDIT_MEDIUM (security issues detected)"
+          else
+            echo "::warning::No bandit findings - consider adding security issues to failing fixture"
+          fi
+
+          echo ""
+          if [ "$ERRORS" -gt 0 ]; then
+            echo "::error::Validation failed with $ERRORS errors"
+            exit 1
+          fi
+          echo "=== Failing Fixture Validation Complete: All checks passed ==="

@@ -93,3 +93,215 @@ jobs:
       workdir: 'java-with-docker'
       artifact_prefix: 'java-docker-'
     secrets: inherit
+
+  # ============================================================================
+  # Report Validation - Passing Fixture
+  # ============================================================================
+  validate-passing:
+    name: "Validate Passing Report"
+    runs-on: ubuntu-latest
+    needs: ci-passing
+    if: always()
+    steps:
+      - name: Download Report
+        uses: actions/download-artifact@v4
+        with:
+          name: java-passing-ci-report
+          path: ./report
+
+      - name: Validate Report Structure
+        run: |
+          REPORT="./report/report.json"
+          ERRORS=0
+
+          if [ ! -f "$REPORT" ]; then
+            echo "::error::report.json not found"
+            exit 1
+          fi
+
+          echo "=== Report Contents ==="
+          cat "$REPORT"
+          echo ""
+          echo "=== Validation Checks ==="
+
+          # 1. Schema version must be exactly "2.0"
+          SCHEMA=$(jq -r '.schema_version // empty' "$REPORT")
+          if [ "$SCHEMA" != "2.0" ]; then
+            echo "::error::schema_version must be '2.0', got '$SCHEMA'"
+            ERRORS=$((ERRORS + 1))
+          else
+            echo "✓ schema_version: $SCHEMA"
+          fi
+
+          # 2. Test results
+          TESTS_PASSED=$(jq -r '.results.tests_passed // 0' "$REPORT")
+          TESTS_FAILED=$(jq -r '.results.tests_failed // 0' "$REPORT")
+          if [ "$TESTS_PASSED" -eq 0 ]; then
+            echo "::error::tests_passed is 0 - expected tests to run"
+            ERRORS=$((ERRORS + 1))
+          else
+            echo "✓ tests_passed: $TESTS_PASSED"
+          fi
+          if [ "$TESTS_FAILED" -gt 0 ]; then
+            echo "::error::tests_failed ($TESTS_FAILED) > 0 - passing fixture should have no test failures"
+            ERRORS=$((ERRORS + 1))
+          else
+            echo "✓ tests_failed: $TESTS_FAILED"
+          fi
+
+          # 3. Coverage >= 70%
+          COVERAGE=$(jq -r '.results.coverage // 0' "$REPORT")
+          if [ "$COVERAGE" -lt 70 ]; then
+            echo "::error::coverage ($COVERAGE%) below 70% threshold"
+            ERRORS=$((ERRORS + 1))
+          else
+            echo "✓ coverage: $COVERAGE%"
+          fi
+
+          # 4. ALL enabled tools must show tools_ran == true
+          echo ""
+          echo "--- tools_ran checks (all enabled tools) ---"
+          for TOOL in jacoco checkstyle spotbugs owasp pitest pmd semgrep trivy docker codeql; do
+            RAN=$(jq -r ".tools_ran.$TOOL // false" "$REPORT")
+            if [ "$RAN" != "true" ]; then
+              echo "::error::tools_ran.$TOOL is $RAN - expected true (tool was enabled)"
+              ERRORS=$((ERRORS + 1))
+            else
+              echo "✓ tools_ran.$TOOL: $RAN"
+            fi
+          done
+
+          # 5. tool_metrics must be populated for enabled tools
+          echo ""
+          echo "--- tool_metrics checks (passing fixture = 0 issues) ---"
+          CHECKSTYLE_ERRORS=$(jq -r '.tool_metrics.checkstyle_errors // "null"' "$REPORT")
+          SPOTBUGS_BUGS=$(jq -r '.tool_metrics.spotbugs_bugs // "null"' "$REPORT")
+          PMD_VIOLATIONS=$(jq -r '.tool_metrics.pmd_violations // "null"' "$REPORT")
+          OWASP_CRITICAL=$(jq -r '.tool_metrics.owasp_critical // "null"' "$REPORT")
+          OWASP_HIGH=$(jq -r '.tool_metrics.owasp_high // "null"' "$REPORT")
+          SEMGREP_FINDINGS=$(jq -r '.tool_metrics.semgrep_findings // "null"' "$REPORT")
+
+          # Check populated (not null)
+          for METRIC in checkstyle_errors spotbugs_bugs pmd_violations owasp_critical owasp_high semgrep_findings; do
+            VAL=$(jq -r ".tool_metrics.$METRIC // \"null\"" "$REPORT")
+            if [ "$VAL" = "null" ]; then
+              echo "::error::tool_metrics.$METRIC is null - should be populated"
+              ERRORS=$((ERRORS + 1))
+            fi
+          done
+
+          # For passing fixture: static analysis issues should be 0
+          if [ "$CHECKSTYLE_ERRORS" != "null" ] && [ "$CHECKSTYLE_ERRORS" -gt 0 ]; then
+            echo "::error::checkstyle_errors ($CHECKSTYLE_ERRORS) > 0 - passing fixture should have no style errors"
+            ERRORS=$((ERRORS + 1))
+          else
+            echo "✓ checkstyle_errors: $CHECKSTYLE_ERRORS"
+          fi
+          if [ "$SPOTBUGS_BUGS" != "null" ] && [ "$SPOTBUGS_BUGS" -gt 0 ]; then
+            echo "::error::spotbugs_bugs ($SPOTBUGS_BUGS) > 0 - passing fixture should have no bugs"
+            ERRORS=$((ERRORS + 1))
+          else
+            echo "✓ spotbugs_bugs: $SPOTBUGS_BUGS"
+          fi
+          if [ "$PMD_VIOLATIONS" != "null" ] && [ "$PMD_VIOLATIONS" -gt 0 ]; then
+            echo "::error::pmd_violations ($PMD_VIOLATIONS) > 0 - passing fixture should have no violations"
+            ERRORS=$((ERRORS + 1))
+          else
+            echo "✓ pmd_violations: $PMD_VIOLATIONS"
+          fi
+
+          echo ""
+          if [ "$ERRORS" -gt 0 ]; then
+            echo "::error::Validation failed with $ERRORS errors"
+            exit 1
+          fi
+          echo "=== Passing Fixture Validation Complete: All checks passed ==="
+
+  # ============================================================================
+  # Report Validation - Failing Fixture
+  # ============================================================================
+  validate-failing:
+    name: "Validate Failing Report"
+    runs-on: ubuntu-latest
+    needs: ci-failing
+    if: always()
+    steps:
+      - name: Download Report
+        uses: actions/download-artifact@v4
+        with:
+          name: java-failing-ci-report
+          path: ./report
+
+      - name: Validate Report Structure
+        run: |
+          REPORT="./report/report.json"
+          ERRORS=0
+
+          if [ ! -f "$REPORT" ]; then
+            echo "::error::report.json not found"
+            exit 1
+          fi
+
+          echo "=== Report Contents ==="
+          cat "$REPORT"
+          echo ""
+          echo "=== Validation Checks ==="
+
+          # 1. Schema version must be exactly "2.0"
+          SCHEMA=$(jq -r '.schema_version // empty' "$REPORT")
+          if [ "$SCHEMA" != "2.0" ]; then
+            echo "::error::schema_version must be '2.0', got '$SCHEMA'"
+            ERRORS=$((ERRORS + 1))
+          else
+            echo "✓ schema_version: $SCHEMA"
+          fi
+
+          # 2. ALL enabled tools must show tools_ran == true
+          echo ""
+          echo "--- tools_ran checks (all enabled tools) ---"
+          for TOOL in jacoco checkstyle spotbugs owasp pitest pmd semgrep trivy docker codeql; do
+            RAN=$(jq -r ".tools_ran.$TOOL // false" "$REPORT")
+            if [ "$RAN" != "true" ]; then
+              echo "::error::tools_ran.$TOOL is $RAN - expected true (tool was enabled)"
+              ERRORS=$((ERRORS + 1))
+            else
+              echo "✓ tools_ran.$TOOL: $RAN"
+            fi
+          done
+
+          # 3. tool_metrics must be populated (not null)
+          echo ""
+          echo "--- tool_metrics checks (must be populated) ---"
+          for METRIC in checkstyle_errors spotbugs_bugs pmd_violations owasp_critical owasp_high semgrep_findings; do
+            VAL=$(jq -r ".tool_metrics.$METRIC // \"null\"" "$REPORT")
+            if [ "$VAL" = "null" ]; then
+              echo "::error::tool_metrics.$METRIC is null - should be populated"
+              ERRORS=$((ERRORS + 1))
+            else
+              echo "✓ tool_metrics.$METRIC: $VAL"
+            fi
+          done
+
+          # 4. Failing fixture MUST detect issues - fail if no issues found
+          echo ""
+          echo "--- Issue detection checks (failing fixture must have issues) ---"
+          CHECKSTYLE_ERRORS=$(jq -r '.tool_metrics.checkstyle_errors // 0' "$REPORT")
+          SPOTBUGS_BUGS=$(jq -r '.tool_metrics.spotbugs_bugs // 0' "$REPORT")
+          PMD_VIOLATIONS=$(jq -r '.tool_metrics.pmd_violations // 0' "$REPORT")
+
+          # At least one static analysis tool MUST detect issues
+          TOTAL_ISSUES=$((CHECKSTYLE_ERRORS + SPOTBUGS_BUGS + PMD_VIOLATIONS))
+          if [ "$TOTAL_ISSUES" -eq 0 ]; then
+            echo "::error::No static analysis issues detected - failing fixture MUST have issues"
+            echo "  checkstyle_errors=$CHECKSTYLE_ERRORS, spotbugs_bugs=$SPOTBUGS_BUGS, pmd_violations=$PMD_VIOLATIONS"
+            ERRORS=$((ERRORS + 1))
+          else
+            echo "✓ Issues detected as expected: checkstyle=$CHECKSTYLE_ERRORS, spotbugs=$SPOTBUGS_BUGS, pmd=$PMD_VIOLATIONS"
+          fi
+
+          echo ""
+          if [ "$ERRORS" -gt 0 ]; then
+            echo "::error::Validation failed with $ERRORS errors"
+            exit 1
+          fi
+          echo "=== Failing Fixture Validation Complete: All checks passed ==="
