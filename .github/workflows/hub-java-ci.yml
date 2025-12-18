@@ -305,3 +305,102 @@ jobs:
             exit 1
           fi
           echo "=== Failing Fixture Validation Complete: All checks passed ==="
+
+  # ============================================================================
+  # Report Validation - Docker Fixture
+  # ============================================================================
+  validate-docker:
+    name: "Validate Docker Report"
+    runs-on: ubuntu-latest
+    needs: ci-docker
+    if: always()
+    steps:
+      - name: Download Report
+        uses: actions/download-artifact@v4
+        with:
+          name: java-docker-ci-report
+          path: ./report
+
+      - name: Validate Report Structure
+        run: |
+          REPORT="./report/report.json"
+          ERRORS=0
+
+          if [ ! -f "$REPORT" ]; then
+            echo "::error::report.json not found"
+            exit 1
+          fi
+
+          echo "=== Report Contents ==="
+          cat "$REPORT"
+          echo ""
+          echo "=== Validation Checks ==="
+
+          # 1. Schema version must be exactly "2.0"
+          SCHEMA=$(jq -r '.schema_version // empty' "$REPORT")
+          if [ "$SCHEMA" != "2.0" ]; then
+            echo "::error::schema_version must be '2.0', got '$SCHEMA'"
+            ERRORS=$((ERRORS + 1))
+          else
+            echo "✓ schema_version: $SCHEMA"
+          fi
+
+          # 2. Test results
+          TESTS_PASSED=$(jq -r '.results.tests_passed // 0' "$REPORT")
+          if [ "$TESTS_PASSED" -eq 0 ]; then
+            echo "::error::tests_passed is 0 - expected tests to run"
+            ERRORS=$((ERRORS + 1))
+          else
+            echo "✓ tests_passed: $TESTS_PASSED"
+          fi
+
+          # 3. Coverage >= 70%
+          COVERAGE=$(jq -r '.results.coverage // 0' "$REPORT")
+          if [ "$COVERAGE" -lt 70 ]; then
+            echo "::error::coverage ($COVERAGE%) below 70% threshold"
+            ERRORS=$((ERRORS + 1))
+          else
+            echo "✓ coverage: $COVERAGE%"
+          fi
+
+          # 4. Enabled tools must show tools_ran == true
+          # Docker fixture: jacoco, checkstyle, spotbugs, owasp, pmd, semgrep, trivy, docker (no pitest, codeql)
+          echo ""
+          echo "--- tools_ran checks (enabled tools for ci-docker) ---"
+          for TOOL in jacoco checkstyle spotbugs owasp pmd semgrep trivy docker; do
+            RAN=$(jq -r ".tools_ran.$TOOL // false" "$REPORT")
+            if [ "$RAN" != "true" ]; then
+              echo "::error::tools_ran.$TOOL is $RAN - expected true (tool was enabled)"
+              ERRORS=$((ERRORS + 1))
+            else
+              echo "✓ tools_ran.$TOOL: $RAN"
+            fi
+          done
+
+          # 5. Disabled tools should be false
+          echo ""
+          echo "--- tools_ran checks (disabled tools) ---"
+          for TOOL in pitest codeql; do
+            RAN=$(jq -r ".tools_ran.$TOOL // false" "$REPORT")
+            echo "✓ tools_ran.$TOOL: $RAN (disabled)"
+          done
+
+          # 6. tool_metrics for enabled tools
+          echo ""
+          echo "--- tool_metrics checks ---"
+          for METRIC in checkstyle_errors spotbugs_bugs pmd_violations owasp_critical owasp_high semgrep_findings trivy_critical trivy_high; do
+            VAL=$(jq -r ".tool_metrics.$METRIC // \"null\"" "$REPORT")
+            if [ "$VAL" = "null" ]; then
+              echo "::error::tool_metrics.$METRIC is null - should be populated"
+              ERRORS=$((ERRORS + 1))
+            else
+              echo "✓ tool_metrics.$METRIC: $VAL"
+            fi
+          done
+
+          echo ""
+          if [ "$ERRORS" -gt 0 ]; then
+            echo "::error::Validation failed with $ERRORS errors"
+            exit 1
+          fi
+          echo "=== Docker Fixture Validation Complete: All checks passed ==="
