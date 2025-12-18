@@ -73,6 +73,7 @@ jobs:
 
   ci-docker:
     # Dedicated docker fixture - exercises Trivy container scan and Docker build
+    # NOTE: Focus is Docker/Trivy testing, not code quality - relaxed thresholds
     name: "Python Docker"
     uses: jguida941/ci-cd-hub/.github/workflows/python-ci.yml@phase1b-workflow-schema
     with:
@@ -90,6 +91,8 @@ jobs:
       run_docker: true
       run_codeql: false
       coverage_min: 70
+      max_high_vulns: 10
+      max_semgrep_findings: 10
       workdir: 'python-with-docker'
       artifact_prefix: 'python-docker-'
     secrets: inherit
