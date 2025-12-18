@@ -66,3 +66,25 @@ jobs:
       workdir: 'java-failing'
       artifact_prefix: 'java-failing-'
     secrets: inherit
+
+  ci-docker:
+    # Dedicated docker fixture - exercises Trivy container scan and Docker build
+    name: "Java Docker"
+    uses: jguida941/ci-cd-hub/.github/workflows/java-ci.yml@phase1b-workflow-schema
+    with:
+      java_version: '21'
+      build_tool: 'maven'
+      run_jacoco: true
+      run_checkstyle: true
+      run_spotbugs: true
+      run_owasp: true
+      run_pitest: false
+      run_pmd: true
+      run_semgrep: true
+      run_trivy: true
+      run_docker: true
+      run_codeql: false
+      coverage_min: 70
+      workdir: 'java-with-docker'
+      artifact_prefix: 'java-docker-'
+    secrets: inherit

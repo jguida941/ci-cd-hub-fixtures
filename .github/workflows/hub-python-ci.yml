@@ -70,3 +70,26 @@ jobs:
       workdir: 'python-failing'
       artifact_prefix: 'python-failing-'
     secrets: inherit
+
+  ci-docker:
+    # Dedicated docker fixture - exercises Trivy container scan and Docker build
+    name: "Python Docker"
+    uses: jguida941/ci-cd-hub/.github/workflows/python-ci.yml@phase1b-workflow-schema
+    with:
+      python_version: '3.12'
+      run_pytest: true
+      run_ruff: true
+      run_bandit: true
+      run_pip_audit: true
+      run_mypy: false
+      run_black: true
+      run_isort: true
+      run_mutmut: false
+      run_semgrep: true
+      run_trivy: true
+      run_docker: true
+      run_codeql: false
+      coverage_min: 70
+      workdir: 'python-with-docker'
+      artifact_prefix: 'python-docker-'
+    secrets: inherit
