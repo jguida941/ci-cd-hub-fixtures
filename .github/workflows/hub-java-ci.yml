@@ -12,6 +12,10 @@ on:
     paths:
       - 'java-*/**'
 
+permissions:
+  contents: read
+  security-events: write
+
 jobs:
   ci:
     uses: jguida941/ci-cd-hub/.github/workflows/java-ci.yml@phase1b-workflow-schema

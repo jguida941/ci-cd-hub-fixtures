@@ -12,6 +12,10 @@ on:
     paths:
       - 'python-*/**'
 
+permissions:
+  contents: read
+  security-events: write
+
 jobs:
   ci:
     uses: jguida941/ci-cd-hub/.github/workflows/python-ci.yml@phase1b-workflow-schema
