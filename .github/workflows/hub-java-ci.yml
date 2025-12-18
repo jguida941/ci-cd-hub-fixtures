@@ -35,6 +35,7 @@ jobs:
       run_codeql: true
       coverage_min: 70
       workdir: 'java-passing'
+      artifact_prefix: 'java-passing-'
     secrets: inherit
 
   ci-failing:
@@ -61,4 +62,5 @@ jobs:
       max_critical_vulns: 999
       max_high_vulns: 999
       workdir: 'java-failing'
+      artifact_prefix: 'java-failing-'
     secrets: inherit

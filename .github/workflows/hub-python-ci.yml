@@ -36,6 +36,7 @@ jobs:
       run_codeql: true
       coverage_min: 70
       workdir: 'python-passing'
+      artifact_prefix: 'python-passing-'
     secrets: inherit
 
   ci-failing:
@@ -62,4 +63,5 @@ jobs:
       max_critical_vulns: 999
       max_high_vulns: 999
       workdir: 'python-failing'
+      artifact_prefix: 'python-failing-'
     secrets: inherit
