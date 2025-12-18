@@ -327,7 +327,9 @@ class TestPropertyBased:
         assert mathops.factorial(n) >= 1
 
     @settings(suppress_health_check=[HealthCheck.differing_executors])
-    @given(st.integers(min_value=1, max_value=50), st.integers(min_value=1, max_value=50))
+    @given(
+        st.integers(min_value=1, max_value=50), st.integers(min_value=1, max_value=50)
+    )
     def test_gcd_divides_both(self, a, b):
         g = mathops.gcd(a, b)
         assert a % g == 0
