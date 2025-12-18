@@ -41,6 +41,7 @@ jobs:
   ci-failing:
     # NOTE: Relaxed thresholds so we can see all findings in ci-report
     # This fixture is expected to have issues - we want to verify detection
+    # TODO: When ready for production, set appropriate thresholds
     name: "Java Failing"
     uses: jguida941/ci-cd-hub/.github/workflows/java-ci.yml@phase1b-workflow-schema
     with:
@@ -61,6 +62,7 @@ jobs:
       owasp_cvss_fail: 11
       max_critical_vulns: 999
       max_high_vulns: 999
+      max_semgrep_findings: 999
       workdir: 'java-failing'
       artifact_prefix: 'java-failing-'
     secrets: inherit
