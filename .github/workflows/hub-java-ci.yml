@@ -1,0 +1,33 @@
+# Caller workflow to test reusable Java CI from hub
+name: "Hub: Java CI (Reusable)"
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main, test-phase1b-schema]
+    paths:
+      - 'java-*/**'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'java-*/**'
+
+jobs:
+  ci:
+    uses: jguida941/ci-cd-hub/.github/workflows/java-ci.yml@phase1b-workflow-schema
+    with:
+      java_version: '21'
+      build_tool: 'maven'
+      run_jacoco: true
+      run_checkstyle: true
+      run_spotbugs: true
+      run_owasp: true
+      run_pitest: false  # Skip for faster test
+      run_pmd: true
+      run_semgrep: false
+      run_trivy: false
+      run_docker: false
+      run_codeql: false
+      coverage_min: 70
+      workdir: 'java-passing'
+    secrets: inherit

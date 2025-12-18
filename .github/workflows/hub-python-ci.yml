@@ -1,0 +1,34 @@
+# Caller workflow to test reusable Python CI from hub
+name: "Hub: Python CI (Reusable)"
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main, test-phase1b-schema]
+    paths:
+      - 'python-*/**'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'python-*/**'
+
+jobs:
+  ci:
+    uses: jguida941/ci-cd-hub/.github/workflows/python-ci.yml@phase1b-workflow-schema
+    with:
+      python_version: '3.12'
+      run_pytest: true
+      run_ruff: true
+      run_bandit: true
+      run_pip_audit: true
+      run_mypy: false
+      run_black: true
+      run_isort: true
+      run_mutmut: false  # Skip for faster test
+      run_semgrep: false
+      run_trivy: false
+      run_docker: false
+      run_codeql: false
+      coverage_min: 70
+      workdir: 'python-passing'
+    secrets: inherit
