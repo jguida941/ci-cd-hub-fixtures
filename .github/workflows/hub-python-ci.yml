@@ -39,6 +39,8 @@ jobs:
     secrets: inherit
 
   ci-failing:
+    # NOTE: Relaxed thresholds so we can see all findings in ci-report
+    # This fixture is expected to have issues - we want to verify detection
     name: "Python Failing"
     uses: jguida941/ci-cd-hub/.github/workflows/python-ci.yml@phase1b-workflow-schema
     with:
@@ -55,6 +57,9 @@ jobs:
       run_trivy: true
       run_docker: true
       run_codeql: true
-      coverage_min: 70
+      coverage_min: 0
+      mutation_score_min: 0
+      max_critical_vulns: 999
+      max_high_vulns: 999
       workdir: 'python-failing'
     secrets: inherit
