@@ -179,48 +179,60 @@ jobs:
           done
 
           # 5. tool_metrics must be populated for enabled tools
+          # Full list: ruff_errors, bandit_high, bandit_medium, black_issues, isort_issues, pip_audit_vulns, semgrep_findings, trivy_critical, trivy_high
           echo ""
           echo "--- tool_metrics checks (passing fixture = 0 issues) ---"
-          RUFF_ERRORS=$(jq -r '.tool_metrics.ruff_errors // "null"' "$REPORT")
-          BANDIT_HIGH=$(jq -r '.tool_metrics.bandit_high // "null"' "$REPORT")
-          BANDIT_MEDIUM=$(jq -r '.tool_metrics.bandit_medium // "null"' "$REPORT")
-          BLACK_ISSUES=$(jq -r '.tool_metrics.black_issues // "null"' "$REPORT")
-          ISORT_ISSUES=$(jq -r '.tool_metrics.isort_issues // "null"' "$REPORT")
-          SEMGREP_FINDINGS=$(jq -r '.tool_metrics.semgrep_findings // "null"' "$REPORT")
 
-          # Check populated (not null)
-          for METRIC in ruff_errors bandit_high bandit_medium black_issues isort_issues semgrep_findings; do
+          # Check ALL tool_metrics are populated (not null)
+          for METRIC in ruff_errors bandit_high bandit_medium black_issues isort_issues pip_audit_vulns semgrep_findings trivy_critical trivy_high; do
             VAL=$(jq -r ".tool_metrics.$METRIC // \"null\"" "$REPORT")
             if [ "$VAL" = "null" ]; then
               echo "::error::tool_metrics.$METRIC is null - should be populated"
               ERRORS=$((ERRORS + 1))
+            else
+              echo "✓ tool_metrics.$METRIC: $VAL"
             fi
           done
 
+          # Extract values for zero-issue checks
+          RUFF_ERRORS=$(jq -r '.tool_metrics.ruff_errors // 0' "$REPORT")
+          BANDIT_HIGH=$(jq -r '.tool_metrics.bandit_high // 0' "$REPORT")
+          BLACK_ISSUES=$(jq -r '.tool_metrics.black_issues // 0' "$REPORT")
+          ISORT_ISSUES=$(jq -r '.tool_metrics.isort_issues // 0' "$REPORT")
+          PIP_AUDIT_VULNS=$(jq -r '.tool_metrics.pip_audit_vulns // 0' "$REPORT")
+
           # For passing fixture: lint/security issues must be 0
-          if [ "$RUFF_ERRORS" != "null" ] && [ "$RUFF_ERRORS" -gt 0 ]; then
+          echo ""
+          echo "--- Zero-issue checks for passing fixture ---"
+          if [ "$RUFF_ERRORS" -gt 0 ]; then
             echo "::error::ruff_errors ($RUFF_ERRORS) > 0 - passing fixture should have no lint errors"
             ERRORS=$((ERRORS + 1))
           else
             echo "✓ ruff_errors: $RUFF_ERRORS"
           fi
-          if [ "$BLACK_ISSUES" != "null" ] && [ "$BLACK_ISSUES" -gt 0 ]; then
+          if [ "$BLACK_ISSUES" -gt 0 ]; then
             echo "::error::black_issues ($BLACK_ISSUES) > 0 - passing fixture should have no format issues"
             ERRORS=$((ERRORS + 1))
           else
             echo "✓ black_issues: $BLACK_ISSUES"
           fi
-          if [ "$ISORT_ISSUES" != "null" ] && [ "$ISORT_ISSUES" -gt 0 ]; then
+          if [ "$ISORT_ISSUES" -gt 0 ]; then
             echo "::error::isort_issues ($ISORT_ISSUES) > 0 - passing fixture should have no import issues"
             ERRORS=$((ERRORS + 1))
           else
             echo "✓ isort_issues: $ISORT_ISSUES"
           fi
-          if [ "$BANDIT_HIGH" != "null" ] && [ "$BANDIT_HIGH" -gt 0 ]; then
+          if [ "$BANDIT_HIGH" -gt 0 ]; then
             echo "::error::bandit_high ($BANDIT_HIGH) > 0 - passing fixture should have no high security issues"
             ERRORS=$((ERRORS + 1))
           else
             echo "✓ bandit_high: $BANDIT_HIGH"
+          fi
+          if [ "$PIP_AUDIT_VULNS" -gt 0 ]; then
+            echo "::error::pip_audit_vulns ($PIP_AUDIT_VULNS) > 0 - passing fixture should have no dependency vulnerabilities"
+            ERRORS=$((ERRORS + 1))
+          else
+            echo "✓ pip_audit_vulns: $PIP_AUDIT_VULNS"
           fi
 
           echo ""
@@ -284,9 +296,10 @@ jobs:
           done
 
           # 3. tool_metrics must be populated (not null)
+          # Full list: ruff_errors, bandit_high, bandit_medium, black_issues, isort_issues, pip_audit_vulns, semgrep_findings, trivy_critical, trivy_high
           echo ""
           echo "--- tool_metrics checks (must be populated) ---"
-          for METRIC in ruff_errors bandit_high bandit_medium black_issues isort_issues semgrep_findings; do
+          for METRIC in ruff_errors bandit_high bandit_medium black_issues isort_issues pip_audit_vulns semgrep_findings trivy_critical trivy_high; do
             VAL=$(jq -r ".tool_metrics.$METRIC // \"null\"" "$REPORT")
             if [ "$VAL" = "null" ]; then
               echo "::error::tool_metrics.$METRIC is null - should be populated"
@@ -303,6 +316,7 @@ jobs:
           RUFF_ERRORS=$(jq -r '.tool_metrics.ruff_errors // 0' "$REPORT")
           BANDIT_HIGH=$(jq -r '.tool_metrics.bandit_high // 0' "$REPORT")
           BANDIT_MEDIUM=$(jq -r '.tool_metrics.bandit_medium // 0' "$REPORT")
+          PIP_AUDIT_VULNS=$(jq -r '.tool_metrics.pip_audit_vulns // 0' "$REPORT")
 
           # Black MUST detect formatting issues in failing fixture
           if [ "$BLACK_ISSUES" -eq 0 ]; then

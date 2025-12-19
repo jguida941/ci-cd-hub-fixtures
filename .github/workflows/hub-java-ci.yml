@@ -172,42 +172,58 @@ jobs:
           done
 
           # 5. tool_metrics must be populated for enabled tools
+          # Full list: checkstyle_issues, spotbugs_issues, pmd_violations, owasp_critical, owasp_high, semgrep_findings, trivy_critical, trivy_high
           echo ""
-          echo "--- tool_metrics checks (passing fixture = 0 issues) ---"
-          CHECKSTYLE_ERRORS=$(jq -r '.tool_metrics.checkstyle_errors // "null"' "$REPORT")
-          SPOTBUGS_BUGS=$(jq -r '.tool_metrics.spotbugs_bugs // "null"' "$REPORT")
-          PMD_VIOLATIONS=$(jq -r '.tool_metrics.pmd_violations // "null"' "$REPORT")
-          OWASP_CRITICAL=$(jq -r '.tool_metrics.owasp_critical // "null"' "$REPORT")
-          OWASP_HIGH=$(jq -r '.tool_metrics.owasp_high // "null"' "$REPORT")
-          SEMGREP_FINDINGS=$(jq -r '.tool_metrics.semgrep_findings // "null"' "$REPORT")
-
-          # Check populated (not null)
-          for METRIC in checkstyle_errors spotbugs_bugs pmd_violations owasp_critical owasp_high semgrep_findings; do
+          echo "--- tool_metrics checks (must be populated) ---"
+          for METRIC in checkstyle_issues spotbugs_issues pmd_violations owasp_critical owasp_high semgrep_findings trivy_critical trivy_high; do
             VAL=$(jq -r ".tool_metrics.$METRIC // \"null\"" "$REPORT")
             if [ "$VAL" = "null" ]; then
               echo "::error::tool_metrics.$METRIC is null - should be populated"
               ERRORS=$((ERRORS + 1))
+            else
+              echo "✓ tool_metrics.$METRIC: $VAL"
             fi
           done
 
-          # For passing fixture: static analysis issues should be 0
-          if [ "$CHECKSTYLE_ERRORS" != "null" ] && [ "$CHECKSTYLE_ERRORS" -gt 0 ]; then
-            echo "::error::checkstyle_errors ($CHECKSTYLE_ERRORS) > 0 - passing fixture should have no style errors"
+          # Extract values for zero-issue checks
+          CHECKSTYLE_ISSUES=$(jq -r '.tool_metrics.checkstyle_issues // 0' "$REPORT")
+          SPOTBUGS_ISSUES=$(jq -r '.tool_metrics.spotbugs_issues // 0' "$REPORT")
+          PMD_VIOLATIONS=$(jq -r '.tool_metrics.pmd_violations // 0' "$REPORT")
+          OWASP_CRITICAL=$(jq -r '.tool_metrics.owasp_critical // 0' "$REPORT")
+          OWASP_HIGH=$(jq -r '.tool_metrics.owasp_high // 0' "$REPORT")
+
+          # For passing fixture: static analysis/security issues should be 0
+          echo ""
+          echo "--- Zero-issue checks for passing fixture ---"
+          if [ "$CHECKSTYLE_ISSUES" -gt 0 ]; then
+            echo "::error::checkstyle_issues ($CHECKSTYLE_ISSUES) > 0 - passing fixture should have no style issues"
             ERRORS=$((ERRORS + 1))
           else
-            echo "✓ checkstyle_errors: $CHECKSTYLE_ERRORS"
+            echo "✓ checkstyle_issues: $CHECKSTYLE_ISSUES"
           fi
-          if [ "$SPOTBUGS_BUGS" != "null" ] && [ "$SPOTBUGS_BUGS" -gt 0 ]; then
-            echo "::error::spotbugs_bugs ($SPOTBUGS_BUGS) > 0 - passing fixture should have no bugs"
+          if [ "$SPOTBUGS_ISSUES" -gt 0 ]; then
+            echo "::error::spotbugs_issues ($SPOTBUGS_ISSUES) > 0 - passing fixture should have no bugs"
             ERRORS=$((ERRORS + 1))
           else
-            echo "✓ spotbugs_bugs: $SPOTBUGS_BUGS"
+            echo "✓ spotbugs_issues: $SPOTBUGS_ISSUES"
           fi
-          if [ "$PMD_VIOLATIONS" != "null" ] && [ "$PMD_VIOLATIONS" -gt 0 ]; then
+          if [ "$PMD_VIOLATIONS" -gt 0 ]; then
             echo "::error::pmd_violations ($PMD_VIOLATIONS) > 0 - passing fixture should have no violations"
             ERRORS=$((ERRORS + 1))
           else
             echo "✓ pmd_violations: $PMD_VIOLATIONS"
+          fi
+          if [ "$OWASP_CRITICAL" -gt 0 ]; then
+            echo "::error::owasp_critical ($OWASP_CRITICAL) > 0 - passing fixture should have no critical vulnerabilities"
+            ERRORS=$((ERRORS + 1))
+          else
+            echo "✓ owasp_critical: $OWASP_CRITICAL"
+          fi
+          if [ "$OWASP_HIGH" -gt 0 ]; then
+            echo "::error::owasp_high ($OWASP_HIGH) > 0 - passing fixture should have no high vulnerabilities"
+            ERRORS=$((ERRORS + 1))
+          else
+            echo "✓ owasp_high: $OWASP_HIGH"
           fi
 
           echo ""
@@ -270,9 +286,10 @@ jobs:
           done
 
           # 3. tool_metrics must be populated (not null)
+          # Full list: checkstyle_issues, spotbugs_issues, pmd_violations, owasp_critical, owasp_high, semgrep_findings, trivy_critical, trivy_high
           echo ""
           echo "--- tool_metrics checks (must be populated) ---"
-          for METRIC in checkstyle_errors spotbugs_bugs pmd_violations owasp_critical owasp_high semgrep_findings; do
+          for METRIC in checkstyle_issues spotbugs_issues pmd_violations owasp_critical owasp_high semgrep_findings trivy_critical trivy_high; do
             VAL=$(jq -r ".tool_metrics.$METRIC // \"null\"" "$REPORT")
             if [ "$VAL" = "null" ]; then
               echo "::error::tool_metrics.$METRIC is null - should be populated"
@@ -285,18 +302,28 @@ jobs:
           # 4. Failing fixture MUST detect issues - fail if no issues found
           echo ""
           echo "--- Issue detection checks (failing fixture must have issues) ---"
-          CHECKSTYLE_ERRORS=$(jq -r '.tool_metrics.checkstyle_errors // 0' "$REPORT")
-          SPOTBUGS_BUGS=$(jq -r '.tool_metrics.spotbugs_bugs // 0' "$REPORT")
+          CHECKSTYLE_ISSUES=$(jq -r '.tool_metrics.checkstyle_issues // 0' "$REPORT")
+          SPOTBUGS_ISSUES=$(jq -r '.tool_metrics.spotbugs_issues // 0' "$REPORT")
           PMD_VIOLATIONS=$(jq -r '.tool_metrics.pmd_violations // 0' "$REPORT")
+          OWASP_CRITICAL=$(jq -r '.tool_metrics.owasp_critical // 0' "$REPORT")
+          OWASP_HIGH=$(jq -r '.tool_metrics.owasp_high // 0' "$REPORT")
 
           # At least one static analysis tool MUST detect issues
-          TOTAL_ISSUES=$((CHECKSTYLE_ERRORS + SPOTBUGS_BUGS + PMD_VIOLATIONS))
+          TOTAL_ISSUES=$((CHECKSTYLE_ISSUES + SPOTBUGS_ISSUES + PMD_VIOLATIONS))
           if [ "$TOTAL_ISSUES" -eq 0 ]; then
             echo "::error::No static analysis issues detected - failing fixture MUST have issues"
-            echo "  checkstyle_errors=$CHECKSTYLE_ERRORS, spotbugs_bugs=$SPOTBUGS_BUGS, pmd_violations=$PMD_VIOLATIONS"
+            echo "  checkstyle_issues=$CHECKSTYLE_ISSUES, spotbugs_issues=$SPOTBUGS_ISSUES, pmd_violations=$PMD_VIOLATIONS"
             ERRORS=$((ERRORS + 1))
           else
-            echo "✓ Issues detected as expected: checkstyle=$CHECKSTYLE_ERRORS, spotbugs=$SPOTBUGS_BUGS, pmd=$PMD_VIOLATIONS"
+            echo "✓ Issues detected as expected: checkstyle=$CHECKSTYLE_ISSUES, spotbugs=$SPOTBUGS_ISSUES, pmd=$PMD_VIOLATIONS"
+          fi
+
+          # OWASP findings (informational for failing fixture)
+          OWASP_TOTAL=$((OWASP_CRITICAL + OWASP_HIGH))
+          if [ "$OWASP_TOTAL" -gt 0 ]; then
+            echo "✓ owasp findings: critical=$OWASP_CRITICAL, high=$OWASP_HIGH (vulnerabilities detected)"
+          else
+            echo "::warning::No OWASP findings - consider adding vulnerable dependencies to failing fixture"
           fi
 
           echo ""
@@ -386,9 +413,10 @@ jobs:
           done
 
           # 6. tool_metrics for enabled tools
+          # Full list for docker fixture: checkstyle_issues, spotbugs_issues, pmd_violations, owasp_critical, owasp_high, semgrep_findings, trivy_critical, trivy_high
           echo ""
           echo "--- tool_metrics checks ---"
-          for METRIC in checkstyle_errors spotbugs_bugs pmd_violations owasp_critical owasp_high semgrep_findings trivy_critical trivy_high; do
+          for METRIC in checkstyle_issues spotbugs_issues pmd_violations owasp_critical owasp_high semgrep_findings trivy_critical trivy_high; do
             VAL=$(jq -r ".tool_metrics.$METRIC // \"null\"" "$REPORT")
             if [ "$VAL" = "null" ]; then
               echo "::error::tool_metrics.$METRIC is null - should be populated"
