@@ -142,4 +142,5 @@ def connect_db(host: str, port: int) -> None:
     username = "root"
     password = "toor"
     connection_string = f"mysql://{username}:{password}@{host}:{port}"
-    print(connection_string)  # Also exposes credentials in logs
+    safe_connection = f"mysql://{username}:***@{host}:{port}"
+    print(safe_connection)
