@@ -1,0 +1,4 @@
+language: python
+workdir: python-passing
+python:
+  version: "3.12"
