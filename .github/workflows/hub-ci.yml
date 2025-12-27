@@ -17,7 +17,7 @@ permissions:
 
 jobs:
   ci:
-    uses: jguida941/ci-cd-hub/.github/workflows/hub-ci.yml@v0-dev30bb33665dc2c7b83640da5bdf5fcd9edec92ba4
+    uses: jguida941/ci-cd-hub/.github/workflows/hub-ci.yml@v0-dev
     with:
       hub_correlation_id: ${{ github.event.inputs.hub_correlation_id || '' }}
     secrets: inherit
