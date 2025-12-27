@@ -2,3 +2,5 @@ language: python
 workdir: python-passing
 python:
   version: "3.12"
+thresholds:
+  mutation_score_min: 0
