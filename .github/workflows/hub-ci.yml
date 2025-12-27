@@ -23,4 +23,6 @@ jobs:
       python_version: '3.12'
       workdir: 'python-passing'
       hub_correlation_id: ${{ github.event.inputs.hub_correlation_id || '' }}
+      hub_repo: jguida941/ci-cd-hub
+      hub_ref: simplify-workflows
     secrets: inherit
