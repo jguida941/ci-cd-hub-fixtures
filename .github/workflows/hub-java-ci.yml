@@ -10,7 +10,7 @@
 #
 # NOTE: Update the @ref below to match your desired hub version:
 #   - Use @v1 (recommended) for stable releases
-#   - Use @main for latest (may have breaking changes)
+#   - Use @v0-dev for latest (may have breaking changes)
 # ============================================================================
 
 name: CI
@@ -31,7 +31,7 @@ permissions:
 
 jobs:
   ci:
-    uses: jguida941/ci-cd-hub/.github/workflows/hub-ci.yml@main
+    uses: jguida941/ci-cd-hub/.github/workflows/hub-ci.yml@v0-dev
     with:
       hub_correlation_id: ${{ github.event.inputs.hub_correlation_id || '' }}
     secrets: inherit
