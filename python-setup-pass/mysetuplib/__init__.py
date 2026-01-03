@@ -1,0 +1,9 @@
+"""Library using setup.py for testing setup.py detection."""
+
+def greet(name: str) -> str:
+    """Return a greeting."""
+    return f"Hello, {name}!"
+
+def add(a: int, b: int) -> int:
+    """Add two numbers."""
+    return a + b
