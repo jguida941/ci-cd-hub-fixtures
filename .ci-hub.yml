@@ -3,9 +3,9 @@ repo:
   owner: jguida941
   name: ci-cd-hub-fixtures
   language: python
-  default_branch: main
+  default_branch: audit/cihub-audit-2026-01-27
   dispatch_workflow: hub-ci.yml
-  subdir: python-passing
+  hub_workflow_ref: audit/owasp-no-key
 python:
   version: '3.12'
   tools:
@@ -51,4 +51,4 @@ reports:
   retention_days: 30
 language: python
 install:
-  source: pypi
+  source: git
